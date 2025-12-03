@@ -4,189 +4,230 @@ import numpy as np
 import time
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
-import requests
+from datetime import datetime, timedelta
 
-# --- CONFIGURATION ---
+# --- 1. PAGE CONFIGURATION (THE "WAR ROOM" LOOK) ---
 st.set_page_config(
-    page_title="Providence OS | Surveillance Core",
-    page_icon="👁️",
+    page_title="PROVIDENCE OS | SENTINEL",
+    page_icon="🦅",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# --- CUSTOM CSS (Sci-Fi/Military Look) ---
+# Force Dark Mode & Sci-Fi Fonts via CSS
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; }
-    .stApp { color: #00ff00; font-family: 'Courier New', monospace; }
-    h1, h2, h3 { color: #00ff41 !important; text-transform: uppercase; letter-spacing: 2px; }
-    .stMetric { background-color: #1a1c24; border: 1px solid #333; padding: 10px; border-radius: 5px; }
-    .css-1r6slb0 { border: 1px solid #00ff41; } 
-    div.stButton > button { background-color: #003300; color: #00ff41; border: 1px solid #00ff41; width: 100%; }
-    div.stButton > button:hover { background-color: #00ff41; color: #000; border: 1px solid #fff; }
-    .blink_me { animation: blinker 1s linear infinite; color: red; font-weight: bold; }
-    @keyframes blinker { 50% { opacity: 0; } }
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    
+    .stApp { background-color: #050505; color: #00ff41; font-family: 'Share Tech Mono', monospace; }
+    
+    /* Headers */
+    h1, h2, h3 { color: #00ff41 !important; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px #00ff41; }
+    
+    /* Metrics Boxes */
+    div[data-testid="stMetric"] { background-color: #111; border: 1px solid #333; padding: 10px; border-radius: 0px; border-left: 5px solid #00ff41; }
+    div[data-testid="stMetricLabel"] { color: #888 !important; }
+    div[data-testid="stMetricValue"] { color: #fff !important; font-size: 24px !important; }
+    
+    /* Buttons */
+    div.stButton > button { background-color: #002200; color: #00ff41; border: 1px solid #00ff41; border-radius: 0px; width: 100%; transition: 0.3s; }
+    div.stButton > button:hover { background-color: #00ff41; color: #000; box-shadow: 0 0 15px #00ff41; }
+    
+    /* Alert Text */
+    .alert-red { color: #ff0000; font-weight: bold; animation: blink 1s infinite; }
+    .alert-orange { color: #ffa500; font-weight: bold; }
+    .info-blue { color: #00ffff; }
+    
+    @keyframes blink { 50% { opacity: 0; } }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. DATA LAYER (The Brain) ---
+# --- 2. DATA GENERATOR (THE "BRAIN") ---
 @st.cache_data
-def load_data():
-    # Synthetic Database of Students
-    data = {
-        'Student_ID': ['12412824', '102', '103', '104', '105'],
-        'Name': ['Rohan Sonwane', 'Vihaan Rao', 'Diya Sharma', 'Ananya Gupta', 'Rohan Verma'],
-        'Dept': ['Instrumentation', 'Mech', 'CSE', 'ENTC', 'Civil'],
-        'Avg_Attendance': [85, 42, 91, 75, 60],
-        'Risk_Profile': ['Low', 'High', 'Low', 'Medium', 'High'],
-        'Last_Seen': ['09:05 AM', 'Absent', '08:55 AM', '09:00 AM', '09:30 AM'],
-        'Status': ['On Time', 'Late', 'On Time', 'Late', 'Absent']
-    }
-    return pd.DataFrame(data)
+def load_student_db():
+    return pd.DataFrame({
+        'Student_ID': ['STU-101', 'STU-102', 'STU-103', 'STU-104'],
+        'Name': ['Rohan Sonwane', 'Vihaan Rao', 'Diya Sharma', 'Ananya Gupta'],
+        'Dept': ['Instrumentation', 'Mech', 'CSE', 'ENTC'],
+        'Attentiveness_Score': [88, 45, 92, 65],
+        'Sleep_Instances': [0, 5, 0, 2],
+        'Hand_Raises': [12, 1, 15, 4],
+        'Avg_Entry_Time': ['08:55', '09:15', '08:50', '09:05'],
+        'Risk_Level': ['LOW', 'CRITICAL', 'LOW', 'MODERATE']
+    })
 
-df = load_data()
+db = load_student_db()
 
-# --- 2. SIDEBAR CONTROLS ---
+# --- 3. SIDEBAR: TARGET PROFILER ---
 with st.sidebar:
-    st.title("SYS CONTROL")
+    st.title("👁 PROVIDENCE")
+    st.markdown("SYSTEM_STATUS: ONLINE")
+    st.markdown("SERVER_LATENCY: 12ms")
     st.markdown("---")
-    system_status = st.toggle("ACTIVATE PROVIDENCE", value=True)
-    st.write("**Modules Online:**")
-    st.checkbox("Biometric Core", value=True, disabled=True)
-    st.checkbox("Gait Analysis", value=True, disabled=True)
-    st.checkbox("Predictive Truancy", value=True, disabled=True)
-    st.markdown("---")
-    st.caption(f"System ID: PRV-2025-X\nUser: ADMIN\nLat: 18.5204 N\nLon: 73.8567 E")
-
-# --- 3. DASHBOARD HEADER ---
-c1, c2, c3 = st.columns([6, 2, 2])
-with c1:
-    st.title("PROVIDENCE INTELLIGENCE SYSTEM")
-    st.caption("INTEGRATED SURVEILLANCE & PREDICTIVE ANALYTICS SUITE")
-with c2:
-    st.metric(label="ACTIVE CAMERAS", value="42 / 42")
-with c3:
-    if system_status:
-        st.markdown("<h3 class='blink_me'>● SYSTEM LIVE</h3>", unsafe_allow_html=True)
-    else:
-        st.markdown("<h3>○ OFFLINE</h3>", unsafe_allow_html=True)
-
-st.markdown("---")
-
-if not system_status:
-    st.warning("SYSTEM STANDBY. AUTHORIZATION REQUIRED.")
-    st.stop()
-
-# --- 4. SURVEILLANCE GRID ---
-col_vid1, col_vid2, col_stats = st.columns([3, 3, 2])
-
-with col_vid1:
-    st.subheader("CAM-01: MAIN GATE [ENTRY]")
-    cam1_placeholder = st.empty()
-    st.info("Status: Monitoring Inflow | Detection: ACTIVE")
-
-with col_vid2:
-    st.subheader("CAM-02: CLASSROOM [INTEL]")
-    cam2_placeholder = st.empty()
-    st.info("Status: Behavior Analysis | Anomaly: NONE")
-
-with col_stats:
-    st.subheader("LIVE INTEL FEED")
-    log_placeholder = st.empty()
-    st.subheader("TARGET PREDICTION")
-    gauge_placeholder = st.empty()
-
-# --- 5. SIMULATION LOGIC ---
-# Select a "Target" to Simulate (Rohan Sonwane)
-target_student = df.iloc[0]
-logs = []
-
-# "Start" Button to begin the demo loop
-if st.button("INITIATE SURVEILLANCE SEQUENCE"):
     
-    # Loop 100 times to simulate activity
-    # In a real demo, this runs indefinitely reading from a camera
-    for i in range(100):
-        current_time = datetime.now().strftime("%H:%M:%S")
-        
-        # A. LOGIC ENGINE (The Script)
-        if i % 10 == 0:
-            new_log = f"[{current_time}] SCANNING... Sector Clear."
-        elif i == 30:
-            new_log = f"[{current_time}] <span style='color:yellow'>MOTION DETECTED AT GATE A. ANALYZING...</span>"
-        elif i == 45:
-            # THE REVEAL EVENT
-            status_color = "#00ff41" if target_student['Risk_Profile'] == 'Low' else "red"
-            new_log = f"[{current_time}] <span style='color:{status_color}; font-weight:bold'>MATCH FOUND: {target_student['Name']} ({target_student['Student_ID']})</span>"
-            st.toast(f"IDENTIFIED: {target_student['Name']}", icon="🚨")
-        elif i == 46:
-             new_log = f"[{current_time}] Retrieving Academic Record..."
-        elif i == 48:
-             new_log = f"[{current_time}] Attendance: {target_student['Avg_Attendance']}% | Risk: {target_student['Risk_Profile']}"
-        else:
-            new_log = f"[{current_time}] Syncing neural weights..."
+    st.header("DETECTED PROFILE")
+    # This section updates dynamically in the loop
+    profile_container = st.empty()
+    
+    st.markdown("---")
+    st.write("*ACTIVE MODULES:*")
+    st.checkbox("Face Recognition (v4.2)", True, disabled=True)
+    st.checkbox("Pose Estimation (Sleep/Hand)", True, disabled=True)
+    st.checkbox("Gaze Tracking (Focus)", True, disabled=True)
+    st.checkbox("Predictive Truancy", True, disabled=True)
 
-        logs.append(new_log)
-        if len(logs) > 7: logs.pop(0)
-        
-        # Render Logs
-        log_html = "<br>".join(logs)
-        log_placeholder.markdown(f"<div style='background-color:#000; padding:10px; border:1px solid #333; height:200px; font-size:12px; font-family:monospace'>{log_html}</div>", unsafe_allow_html=True)
-        
-        # B. VISUAL ENGINE (Simulated Video)
-        if i >= 45 and i < 60:
-            # Show "Detected Face" - Using DiceBear API for stability in simulation
-            # (Replaces local file requirement for GitHub deployment)
-            face_url = f"https://thispersondoesnotexist.com/"
-            try:
-                cam1_placeholder.image(face_url, caption=f"ID: {target_student['Student_ID']} | MATCH: 98.4%", use_container_width=True)
-            except:
-                # Fallback if the AI face generator is slow
-                cam1_placeholder.error("Video Stream Buffer... Retrying")
-        else:
-            # Show "Scanning" Static Noise
-            noise = np.random.randint(0, 50, (300, 400, 3), dtype=np.uint8)
-            cam1_placeholder.image(noise, caption="SCANNING SECTOR A...", use_container_width=True, clamp=True)
-            
-        noise_b = np.random.randint(0, 50, (300, 400, 3), dtype=np.uint8)
-        cam2_placeholder.image(noise_b, caption="CLASSROOM SENSORS ACTIVE", use_container_width=True)
+# --- 4. MAIN DASHBOARD LAYOUT ---
 
-        # C. ANALYTICS ENGINE (Gauge Update)
-        # Jitter the gauge to make it look "Live"
-        live_risk = target_student['Avg_Attendance'] + np.random.randint(-2, 3)
-        
-        fig_gauge = go.Figure(go.Indicator(
-            mode = "gauge+number",
-            value = live_risk,
-            title = {'text': "Truancy Probability"},
-            gauge = {'axis': {'range': [None, 100]}, 'bar': {'color': "#00ff41"}, 'bgcolor': "#1a1c24", 'bordercolor': "#333"}
-        ))
-        fig_gauge.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-        gauge_placeholder.plotly_chart(fig_gauge, use_container_width=True)
+# Top Stats Row
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("TOTAL STUDENTS", "1,240", "+2 Today")
+c2.metric("ATTENDANCE RATE", "87.4%", "-2.1%")
+c3.metric("ANOMALIES DETECTED", "14", "High Priority")
+c4.metric("CLASSROOM FOCUS", "72%", "Average")
 
-        time.sleep(0.1) # Speed of simulation loop
-
-# --- 6. STATIC ANALYTICS (Bottom Section) ---
 st.markdown("---")
-st.subheader("DEEP DATA ANALYTICS: STUDENT BEHAVIOR PROFILE")
-col_graph1, col_graph2 = st.columns(2)
 
-with col_graph1:
-    # Graph 1: Attendance Trends
-    df_chart = pd.DataFrame({'Month': ['Jan', 'Feb', 'Mar', 'Apr', 'May'], 'Attendance': [90, 88, 85, 82, 78]})
-    fig = px.line(df_chart, x='Month', y='Attendance', title='Longitudinal Attendance Trend (Target ID)', markers=True)
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-    fig.update_traces(line_color='#00ff41')
-    st.plotly_chart(fig, use_container_width=True)
+# The "Live" Camera Grid
+st.subheader("📍 MULTI-VECTOR SURVEILLANCE GRID")
+cam_col1, cam_col2 = st.columns(2)
 
-with col_graph2:
-    # Graph 2: Interest Heatmap
-    data_matrix = [[10, 20, 30], [20, 10, 60], [30, 60, 10]]
-    fig2 = px.imshow(data_matrix, labels=dict(x="Time of Day", y="Subject", color="Attention Score"),
-                    x=['Morning', 'Noon', 'Afternoon'], y=['Math', 'Physics', 'CS'], color_continuous_scale='Viridis')
-    fig2.update_layout(title="Subject Interest Heatmap", paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-    st.plotly_chart(fig2, use_container_width=True)
+with cam_col1:
+    st.caption("CAM-01: MAIN GATE [ENTRY/EXIT]")
+    cam1_feed = st.empty() # Placeholder for image
+    st.caption("CAM-03: CORRIDOR B [LOITERING]")
+    cam3_feed = st.empty()
 
+with cam_col2:
+    st.caption("CAM-02: CLASSROOM 4B [BEHAVIOR]")
+    cam2_feed = st.empty()
+    st.caption("CAM-04: LAB COMPLEX [RESTRICTED]")
+    cam4_feed = st.empty()
 
+# Analytics & Logs Row
+st.markdown("---")
+col_logs, col_charts = st.columns([1, 2])
 
+with col_logs:
+    st.subheader("📝 LIVE INTELLIGENCE LOG")
+    log_container = st.empty()
+
+with col_charts:
+    st.subheader("📊 REAL-TIME PREDICTIVE INSIGHTS")
+    chart_container = st.empty()
+
+# --- 5. THE SIMULATION LOOP (THE "MOVIE") ---
+# This simulates 60 seconds of intense activity to show off all features
+
+def update_profile_sidebar(student_id):
+    student = db[db['Student_ID'] == student_id].iloc[0]
+    
+    with profile_container.container():
+        # Using DiceBear for consistent avatars based on ID
+        st.image(f"https://api.dicebear.com/7.x/avataaars/svg?seed={student_id}&backgroundColor=b6e3f4", width=150)
+        st.write(f"*ID:* {student['Student_ID']}")
+        st.write(f"*NAME:* {student['Name']}")
+        st.write(f"*DEPT:* {student['Dept']}")
+        
+        # Dynamic Risk Badge
+        color = "red" if student['Risk_Level'] == 'CRITICAL' else "green"
+        st.markdown(f"RISK LEVEL: <span style='color:{color}; font-weight:bold'>{student['Risk_Level']}</span>", unsafe_allow_html=True)
+        
+        # Assessment Scores
+        st.progress(student['Attentiveness_Score'] / 100, text=f"Attentiveness: {student['Attentiveness_Score']}%")
+        st.caption(f"Sleep Events: {student['Sleep_Instances']} | Participation: {student['Hand_Raises']}")
+
+# Start Button
+if st.button("INITIATE LIVE DEMONSTRATION", type="primary"):
+    
+    logs = []
+    
+    # Run loop for 100 iterations
+    for i in range(100):
+        t = datetime.now().strftime("%H:%M:%S")
+        
+        # --- A. EVENT SCRIPTING (The "Story") ---
+        current_event = None
+        
+        if i == 10:
+            current_event = f"[{t}] CAM-01: ID STU-101 (Rohan) Detected. Status: ON TIME."
+            update_profile_sidebar('STU-101')
+        elif i == 25:
+            current_event = f"[{t}] <span class='alert-orange'>CAM-02: SLEEP DETECTED. Subject: STU-102 (Vihaan). Confidence: 94%.</span>"
+            update_profile_sidebar('STU-102') # Show Vihaan's profile (High Risk)
+        elif i == 40:
+            current_event = f"[{t}] <span class='info-blue'>CAM-02: HAND RAISE DETECTED. Subject: STU-103 (Diya). Participation Score +5.</span>"
+            update_profile_sidebar('STU-103')
+        elif i == 60:
+            current_event = f"[{t}] <span class='alert-red'>CAM-04: UNAUTHORIZED ACCESS. Dept 'ENTC' student in 'CHEM LAB'. Alert sent.</span>"
+            update_profile_sidebar('STU-104')
+        elif i % 5 == 0:
+            current_event = f"[{t}] Scanning sectors... Nominal."
+
+        if current_event:
+            logs.append(current_event)
+            if len(logs) > 10: logs.pop(0)
+            
+        # --- B. UPDATE LOGS ---
+        log_html = "<br>".join(logs)
+        log_container.markdown(f"""
+            <div style='background-color:#000; border:1px solid #333; padding:10px; height:300px; overflow-y:auto; font-size:12px; font-family:monospace;'>
+                {log_html}
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # --- C. SIMULATE CAMERA FEEDS (Visual Noise + Text Overlays) ---
+        # In a real app, these are cv2.imshow frames. Here we simulate the "Processing" look.
+        
+        # Generate random noise to look like "encrypting/analyzing" video
+        noise = np.random.randint(0, 50, (200, 400, 3), dtype=np.uint8)
+        
+        # Draw bounding boxes simulation (just overlay text for speed/stability)
+        # Cam 1
+        cam1_feed.image(noise, caption="GATE ENTRY [LIVE]", channels="BGR", use_container_width=True)
+        
+        # Cam 2 (The Classroom) - Flash Red if sleep detected
+        if i >= 25 and i < 35:
+            cam2_caption = "⚠ SLEEPING BEHAVIOR DETECTED"
+        else:
+            cam2_caption = "CLASSROOM BEHAVIOR [NORMAL]"
+        cam2_feed.image(noise, caption=cam2_caption, channels="BGR", use_container_width=True)
+        
+        cam3_feed.image(noise, caption="CORRIDOR ANALYTICS", channels="BGR", use_container_width=True)
+        cam4_feed.image(noise, caption="LAB SECURITY", channels="BGR", use_container_width=True)
+
+        # --- D. REAL-TIME CHARTS (The "Data") ---
+        # Update the chart every few frames to show "Live Thinking"
+        if i % 5 == 0:
+            # Create a complex looking radar chart for the current student
+            categories = ['Attendance', 'Focus', 'Participation', 'Assignments', 'Punctuality']
+            
+            # Jitter the data slightly to make it look live
+            r_vals = [
+                np.random.randint(60, 90), 
+                np.random.randint(50, 100), 
+                np.random.randint(40, 80), 
+                np.random.randint(70, 95), 
+                np.random.randint(60, 90)
+            ]
+            
+            fig = go.Figure()
+            fig.add_trace(go.Scatterpolar(
+                r=r_vals,
+                theta=categories,
+                fill='toself',
+                line_color='#00ff41',
+                opacity=0.7
+            ))
+            fig.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, 100], line_color='#333'), bgcolor='rgba(0,0,0,0)'),
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white'),
+                title="REAL-TIME BEHAVIOR VECTOR",
+                height=300,
+                margin=dict(l=20, r=20, t=30, b=20)
+            )
+            chart_container.plotly_chart(fig, use_container_width=True)
+
+        time.sleep(0.15) # Controls the speed of the "Movie"
+
+    st.success("DEMONSTRATION SEQUENCE COMPLETE. ALL SYSTEMS OPTIMAL.")
